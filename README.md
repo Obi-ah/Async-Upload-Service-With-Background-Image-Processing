@@ -57,6 +57,35 @@ uvicorn app.main:app --reload
 celery -A app.worker.celery_app.celery_app worker -Q uploads --loglevel=info
 ```
 
+## Windows Notes
+This service works on Windows with a few adjustments:
+
+1. Redis is not available natively. Use Docker:
+```
+docker run -p 6379:6379 redis
+```
+
+2. Celery must use the solo worker pool:
+```
+celery -A app.worker.celery_app.celery_app worker -Q uploads --loglevel=info --pool=solo
+```
+
+3. Install MinIO Client (mc):
+```
+choco install minio-client
+```
+Then:
+```
+mc alias set local http://localhost:9000 minioadmin minioadmin
+mc anonymous set download local/uploads-original
+mc anonymous set download local/uploads-processed
+```
+
+4. For file uploads using curl:
+```
+curl -X POST http://127.0.0.1:8000/upload -F "file=@C:\\Users\\Me\\Pictures\\image.png"
+```
+
 ## How to Use the API
 
 ### 1. Upload an image
@@ -83,7 +112,7 @@ Response:
 ```
 GET /upload/{id}/status
 ```
-Possible statuses: pending, processing, completed, failed.
+Statuses: pending, processing, completed, failed.
 
 ### 3. Get processed results
 ```
@@ -97,4 +126,4 @@ Response includes:
 - status  
 
 ## Summary
-This service demonstrates a complete asynchronous image-processing pipeline using FastAPI, Celery, Redis, and MinIO. It supports file upload, background processing, and result retrieval through simple REST endpoints.
+This service demonstrates an asynchronous image-processing pipeline using FastAPI, Celery, Redis, and MinIO. It supports file upload, background processing, and result retrieval through simple REST endpoints.
